@@ -63,12 +63,13 @@ option.ENABLE_OUTLINE.comment=Включает или выключает эфф�
 value.ENABLE_OUTLINE.0=Выкл
 value.ENABLE_OUTLINE.1=Вкл
 
-option.OUTLINE_COLOR_R=§6Цвет обводки Красный
-option.OUTLINE_COLOR_R.comment=Настраивает красный компонент цвета обводки.
-option.OUTLINE_COLOR_G=§6Цвет обводки Зелёный
-option.OUTLINE_COLOR_G.comment=Настраивает зелёный компонент цвета обводки.
-option.OUTLINE_COLOR_B=§6Цвет обводки Синий
-option.OUTLINE_COLOR_B.comment=Настраивает синий компонент цвета обводки.
+option.OUTLINE_COLOR_PRESET=§6Пресет цвета обводки
+option.OUTLINE_COLOR_PRESET.comment=Выберите готовый цвет для обводки: Белый, Чёрный, Синий, Розовый или Фиолетовый.
+value.OUTLINE_COLOR_PRESET.0=Белый
+value.OUTLINE_COLOR_PRESET.1=Чёрный
+value.OUTLINE_COLOR_PRESET.2=Синий
+value.OUTLINE_COLOR_PRESET.3=Розовый
+value.OUTLINE_COLOR_PRESET.4=Фиолетовый
 
 option.OUTLINE_STRENGTH=§6Сила обводки
 option.OUTLINE_STRENGTH.comment=Настраивает насколько сильной/плотной будет обводка. Более высокие значения делают обводку более заметной.
