@@ -228,8 +228,34 @@ vec3 colorGrade(vec3 c) {
     return mix(mid, high, smoothstep(0.4,1.0,l));
 }
 
+vec3 getOutlineColor(int preset) {
+    if (preset == 0) return vec3(1.0, 1.0, 1.0);      // Белый
+    if (preset == 1) return vec3(0.0, 0.0, 0.0);      // Чёрный
+    if (preset == 2) return vec3(0.0, 0.5, 1.0);      // Синий
+    if (preset == 3) return vec3(1.0, 0.4, 0.7);      // Розовый
+    if (preset == 4) return vec3(0.6, 0.2, 0.8);      // Фиолетовый
+    return vec3(1.0, 1.0, 1.0); // По умолчанию белый
+}
+
 void main() {
     vec3 color = texture(colortex0, texcoord).rgb;
+    
+    // Outline effect
+    #if ENABLE_OUTLINE == 1
+    float outlineRadius = OUTLINE_RADIUS / viewHeight;
+    vec3 outlineColor = getOutlineColor(OUTLINE_COLOR_PRESET);
+    
+    float outlineSample1 = texture2D(colortex0, texcoord + vec2(outlineRadius, 0.0)).a;
+    float outlineSample2 = texture2D(colortex0, texcoord - vec2(outlineRadius, 0.0)).a;
+    float outlineSample3 = texture2D(colortex0, texcoord + vec2(0.0, outlineRadius)).a;
+    float outlineSample4 = texture2D(colortex0, texcoord - vec2(0.0, outlineRadius)).a;
+    
+    float edgeDetect = 1.0 - min(min(outlineSample1, outlineSample2), min(outlineSample3, outlineSample4));
+    edgeDetect *= OUTLINE_STRENGTH;
+    edgeDetect = clamp(edgeDetect, 0.0, 1.0);
+    
+    color = mix(color, outlineColor, edgeDetect);
+    #endif
 
     #if TYPE_AA == 0
     FXAA311(color);
