@@ -5,6 +5,8 @@ uniform float far, near;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferProjectionInverse;
 
+#include "/settings.glsl"
+
 float GetLinearDepth(float depth) {
     return (2.0 * near) / (far + near - depth * (far - near));
 }
@@ -26,7 +28,11 @@ vec3 ViewToPlayer(vec3 pos) {
     return mat3(gbufferModelViewInverse) * pos + gbufferModelViewInverse[3].xyz;
 }
 void DoDarkOutline(inout vec3 color, sampler2D depthtex0, vec2 texcoord) {
-    vec2 scale = vec2(1.0 / viewR);
+    #if ENABLE_OUTLINE == 0
+    return;
+    #endif
+    
+    vec2 scale = vec2(OUTLINE_RADIUS / viewR);
 
     float z0 = texture2D(depthtex0, texcoord).r;
     float linearZ0 = GetLinearDepth(z0);
@@ -51,9 +57,9 @@ void DoDarkOutline(inout vec3 color, sampler2D depthtex0, vec2 texcoord) {
         vec3 playerPos = ViewToPlayer(viewPos.xyz);
         vec3 nViewPos = normalize(viewPos.xyz);
 
-        vec3 newColor = vec3(0.03, 0.025, 0.05);
+        vec3 newColor = vec3(OUTLINE_COLOR_R, OUTLINE_COLOR_G, OUTLINE_COLOR_B);
 
-        vec3 color_with_outlines = mix(color, newColor, 1.0 - outline * 1.1);
+        vec3 color_with_outlines = mix(color, newColor, 1.0 - outline * OUTLINE_STRENGTH);
 
         float depth = GetLinearDepth(texture2D(depthtex0, texcoord).r);
         color = mix(color_with_outlines, color, clamp(depth, 0.0, 1.0));

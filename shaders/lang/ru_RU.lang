@@ -54,3 +54,23 @@ value.shadowMapResolution.2048=Средне Высокое (2048)
 value.shadowMapResolution.3072=Высокое (3072)
 value.shadowMapResolution.4096=Очень Высокое (4096)
 value.shadowMapResolution.8192=Сверхвысокое (8192)
+
+# Outline Settings
+screen.OL=Outline/Обводка
+
+option.ENABLE_OUTLINE=§6Включить обводку
+option.ENABLE_OUTLINE.comment=Включает или выключает эффект обводки вокруг объектов.
+value.ENABLE_OUTLINE.0=Выкл
+value.ENABLE_OUTLINE.1=Вкл
+
+option.OUTLINE_COLOR_R=§6Цвет обводки Красный
+option.OUTLINE_COLOR_R.comment=Настраивает красный компонент цвета обводки.
+option.OUTLINE_COLOR_G=§6Цвет обводки Зелёный
+option.OUTLINE_COLOR_G.comment=Настраивает зелёный компонент цвета обводки.
+option.OUTLINE_COLOR_B=§6Цвет обводки Синий
+option.OUTLINE_COLOR_B.comment=Настраивает синий компонент цвета обводки.
+
+option.OUTLINE_STRENGTH=§6Сила обводки
+option.OUTLINE_STRENGTH.comment=Настраивает насколько сильной/плотной будет обводка. Более высокие значения делают обводку более заметной.
+option.OUTLINE_RADIUS=§6Радиус обводки
+option.OUTLINE_RADIUS.comment=Настраивает размер/толщину обводки. Большие значения создают более толстую обводку.
