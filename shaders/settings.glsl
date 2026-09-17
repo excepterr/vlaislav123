@@ -1,6 +1,6 @@
 #define BY 0                // By LoLip_p           [0 1]
 
-#define TYPE_AA 1           // Type Anti-Aliasing   [0 1]
+#define TYPE_AA 1           // Type Anti-Aliasing   [0 1 2]
 #define FOG 1           	// FOG   				[0 1]
 
 #define ENABLE_SKY 1        // Enable Sky           [0 1]
