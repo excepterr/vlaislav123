@@ -189,7 +189,12 @@ void main() {
     #if TYPE_AA == 0
     FXAA311(color);
     #endif
+    
+    #if TYPE_AA == 2
+    // No Anti-Aliasing - skip all AA processing
+    #endif
 
+    #if TYPE_AA != 2
     vec3 north = texture2D(colortex0, texcoord + vec2(0.0, 1.0 / viewHeight)).rgb;
     vec3 south = texture2D(colortex0, texcoord - vec2(0.0, 1.0 / viewHeight)).rgb;
     vec3 east  = texture2D(colortex0, texcoord + vec2(1.0 / viewWidth, 0.0)).rgb;
@@ -198,6 +203,7 @@ void main() {
     vec3 blur = (north + south + east + west + color) * 0.2; 
     float strength = 0.85;
     color = color + strength * (color - blur);
+    #endif
     
 	/*DRAWBUFFERS:0*/
 	gl_FragData[0].rgb = vec3(color);

@@ -8,9 +8,10 @@ screen.PP=Post Processing
 screen.LT=Lighting
 
 option.TYPE_AA=§6Types Anti-Aliasing
-option.TYPE_AA.comment=§2Fast Approximate Anti-Aliasing §f(§6FXAA§f). It works by analyzing pixels on the screen and applying a blur filter to reduce the appearance of these jagged edges without requiring significant computing power. §2Temporal anti-aliasing §f(§6TAA§f). Combines information from past frames and the current frame to remove jaggies in the current frame
+option.TYPE_AA.comment=§2Fast Approximate Anti-Aliasing §f(§6FXAA§f). It works by analyzing pixels on the screen and applying a blur filter to reduce the appearance of these jagged edges without requiring significant computing power. §2Temporal anti-aliasing §f(§6TAA§f). Combines information from past frames and the current frame to remove jaggies in the current frame. §2No Anti-Aliasing §f(§6Off§f). Disables all anti-aliasing for maximum performance.
 value.TYPE_AA.0=FXAA
 value.TYPE_AA.1=TAA
+value.TYPE_AA.2=Off
 
 #Motion Blur
 option.MOTION_BLUR=§6Motion Blur
