@@ -63,12 +63,13 @@ option.ENABLE_OUTLINE.comment=Enables or disables the outline effect around obje
 value.ENABLE_OUTLINE.0=Off
 value.ENABLE_OUTLINE.1=On
 
-option.OUTLINE_COLOR_R=§6Outline Color Red
-option.OUTLINE_COLOR_R.comment=Adjusts the red component of the outline color.
-option.OUTLINE_COLOR_G=§6Outline Color Green
-option.OUTLINE_COLOR_G.comment=Adjusts the green component of the outline color.
-option.OUTLINE_COLOR_B=§6Outline Color Blue
-option.OUTLINE_COLOR_B.comment=Adjusts the blue component of the outline color.
+option.OUTLINE_COLOR_PRESET=§6Outline Color Preset
+option.OUTLINE_COLOR_PRESET.comment=Select a preset color for the outline: White, Black, Blue, Pink, or Purple.
+value.OUTLINE_COLOR_PRESET.0=White
+value.OUTLINE_COLOR_PRESET.1=Black
+value.OUTLINE_COLOR_PRESET.2=Blue
+value.OUTLINE_COLOR_PRESET.3=Pink
+value.OUTLINE_COLOR_PRESET.4=Purple
 
 option.OUTLINE_STRENGTH=§6Outline Strength
 option.OUTLINE_STRENGTH.comment=Adjusts how strong/dense the outline appears. Higher values make outlines more prominent.

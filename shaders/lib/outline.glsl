@@ -57,7 +57,22 @@ void DoDarkOutline(inout vec3 color, sampler2D depthtex0, vec2 texcoord) {
         vec3 playerPos = ViewToPlayer(viewPos.xyz);
         vec3 nViewPos = normalize(viewPos.xyz);
 
-        vec3 newColor = vec3(OUTLINE_COLOR_R, OUTLINE_COLOR_G, OUTLINE_COLOR_B);
+        vec3 outlineColor;
+        #if OUTLINE_COLOR_PRESET == 0
+            outlineColor = vec3(1.0, 1.0, 1.0); // White
+        #elif OUTLINE_COLOR_PRESET == 1
+            outlineColor = vec3(0.0, 0.0, 0.0); // Black
+        #elif OUTLINE_COLOR_PRESET == 2
+            outlineColor = vec3(0.0, 0.5, 1.0); // Blue
+        #elif OUTLINE_COLOR_PRESET == 3
+            outlineColor = vec3(1.0, 0.4, 0.7); // Pink
+        #elif OUTLINE_COLOR_PRESET == 4
+            outlineColor = vec3(0.6, 0.2, 0.8); // Purple
+        #else
+            outlineColor = vec3(1.0, 1.0, 1.0); // Default White
+        #endif
+
+        vec3 newColor = outlineColor;
 
         vec3 color_with_outlines = mix(color, newColor, 1.0 - outline * OUTLINE_STRENGTH);
 
