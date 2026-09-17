@@ -1,115 +1,225 @@
 #version 130
 
-const bool colortex1Clear = false;
-/*
-const int colortex0Format = RGB8;
-const int colortex1Format = RGBA8;
-*/
+#include "distort.glsl"
+#include "/settings.glsl"
+#include "/lib/whatTime.glsl"
 
-in vec2 texcoord;
+in vec2 TexCoords;
 
-uniform float dhFarPlane;
 uniform sampler2D colortex0;
-uniform sampler2D colortex2;
 uniform sampler2D colortex3;
+uniform sampler2D colortex4;
 uniform sampler2D depthtex0;
-uniform sampler2D depthtex1;
-uniform sampler2D dhDepthTex0;
-uniform sampler2D dhDepthTex1;
+uniform sampler2D shadowtex0;
+uniform sampler2D shadowtex1;
+uniform sampler2D shadowcolor0;
 uniform sampler2D noisetex;
 
-uniform vec3 cameraPosition;
-uniform float frameTimeCounter;
-uniform mat4 dhProjectionInverse;
+uniform mat4 gbufferProjectionInverse;
+uniform mat4 gbufferModelViewInverse;
+uniform mat4 shadowModelView;
+uniform mat4 shadowProjection;
+uniform vec3 playerPosition;
 
-const vec3 MOD3 = vec3(.1031,.11369,.13787);
-float hash12(vec2 p)
-{
-	vec3 p3  = fract(vec3(p.xyx) * MOD3);
-    p3 += dot(p3, p3.yzx + 19.19);
-    return fract((p3.x + p3.y) * p3.z);
+uniform int worldTime;
+uniform int isEyeInWater;
+uniform float far, near;
+uniform float blindness;
+uniform float rainStrength;
+uniform float darknessFactor;
+uniform float viewWidth, viewHeight;
+
+const int noiseTextureResolution = 64;
+
+
+float timeCounter;
+
+
+vec2 viewR = vec2(viewWidth, viewHeight);
+float GetLinearDepth(float depth) {
+    return (2.0 * near) / (far + near - depth * (far - near));
+}
+vec2 darkOutlineOffsets[12] = vec2[12](
+    vec2( 1.0, 0.0),
+    vec2(-1.0, 1.0),
+    vec2( 0.0, 1.0),
+    vec2( 1.0, 1.0),
+    vec2(-2.0, 2.0),
+    vec2(-1.0, 2.0),
+    vec2( 0.0, 2.0),
+    vec2( 1.0, 2.0),
+    vec2( 2.0, 2.0),
+    vec2(-2.0, 1.0),
+    vec2( 2.0, 1.0),
+    vec2( 2.0, 0.0)
+);
+vec3 ViewToPlayer(vec3 pos) {
+    return mat3(gbufferModelViewInverse) * pos + gbufferModelViewInverse[3].xyz;
 }
 
-vec3 getPosition(vec2 uv) {
-    float z = texture2D(dhDepthTex1, uv).r;
-	vec2 ndc = uv * 2.0 - 1.0;
-	vec4 clip = vec4(ndc, z * 2.0 - 1.0, 1.0);
-	vec4 view = dhProjectionInverse * clip;
-	view /= view.w;
-	return view.xyz;
+vec3 getOutlineColorFromPreset(int preset) {
+    if (preset == 0) return vec3(1.0, 1.0, 1.0);      // White
+    if (preset == 1) return vec3(0.0, 0.0, 0.0);      // Black
+    if (preset == 2) return vec3(0.0, 0.5, 1.0);      // Blue
+    if (preset == 3) return vec3(1.0, 0.4, 0.7);      // Pink
+    if (preset == 4) return vec3(0.6, 0.2, 0.8);      // Purple
+    return vec3(1.0, 1.0, 1.0); // Default white
 }
 
-vec3 getNormal(vec2 uv) {
-    vec3 n = texture2D(colortex2, texcoord).xyz * 2.0 - 1.0;
-    return normalize(n);
-}
+void Outline(inout vec3 color, sampler2D depthtex0, vec2 texcoord) {
+    #if ENABLE_OUTLINE == 0
+    return;
+    #endif
+    
+    vec2 scale = vec2(OUTLINE_RADIUS / viewR);
 
-float doAO(vec2 uv, vec2 dir, vec3 p, vec3 n) {
-    vec3 samplePos = getPosition(uv + dir) - p;
-    float dist = length(samplePos);
-    vec3  v    = samplePos / dist;
-    float d    = dist * 2.0f;
-    float ao = max(dot(n, v), 0.0) / (1.0 + d);
-    ao *= smoothstep(10f, 10f * 0.5, dist);
-    return ao;
-}
+    float z0 = texture2D(depthtex0, texcoord).r;
+    float linearZ0 = GetLinearDepth(z0);
+    float outline = 1.0;
+    float z = linearZ0 * far * 2.0;
+    float minZ = 1.0, sampleZA = 0.0, sampleZB = 0.0;
+    int sampleCount = 12;
 
-float spiralAO(vec2 uv, vec3 p, vec3 n, float rad) {
-    const float golden = 2.4; // ≈ π*(3 - √5)
-    float ao = 0.0;
-    float inv = 1.0 / float(16);
-	float radius = 0.0;
-    float phase = hash12((uv + frameTimeCounter) * 100.0) * 6.28;
-    float step = rad * inv;
-    for (int i = 0; i < 16; i++) {
-        vec2 dir = vec2(sin(phase), cos(phase));
-		radius += step;
-        phase += golden;
-        ao += doAO(uv, dir * radius, p, n);
+    for (int i = 0; i < sampleCount; i++) {
+        vec2 offset = scale * darkOutlineOffsets[i];
+        sampleZA = texture2D(depthtex0, texcoord + offset).r;
+        sampleZB = texture2D(depthtex0, texcoord - offset).r;
+        float sampleZsum = GetLinearDepth(sampleZA) + GetLinearDepth(sampleZB);
+        outline *= clamp(1.0 - (z - sampleZsum * far), 0.0, 1.0);
+        minZ = min(minZ, min(sampleZA, sampleZB));
     }
-    return ao * inv;
+
+    if (outline < 0.909091) {
+        vec4 viewPos = gbufferProjectionInverse * (vec4(texcoord, minZ, 1.0) * 2.0 - 1.0);
+        viewPos /= viewPos.w;
+        float lViewPos = length(viewPos.xyz);
+        vec3 playerPos = ViewToPlayer(viewPos.xyz);
+        vec3 nViewPos = normalize(viewPos.xyz);
+
+        vec3 newColor = getOutlineColorFromPreset(OUTLINE_COLOR_PRESET);
+
+        vec3 color_with_outlines = mix(color, newColor, 1.0 - outline * OUTLINE_STRENGTH);
+
+        float depth = GetLinearDepth(texture2D(depthtex0, texcoord).r);
+        color = mix(color_with_outlines, color, clamp(depth, 0.0, 1.0));
+    }
+}
+
+float AdjustLightmapTorch(in float torchLight) {
+    const float K = 1.75f;
+	const float P = 3.0f;
+    return K * pow(torchLight, P);
+}
+
+float AdjustLightmapSky(in float sky){
+    float sky_2 = sky * sky;
+    return sky_2 * sky_2;
+}
+
+float calculateShadowBias(float distance) {
+	float bias = 0.0001f;
+    return mix(bias, 0.003f, clamp(distance / shadowDistance, 0.0f, 1.0f));
+}
+
+float Visibility(in sampler2D ShadowMap, in vec3 SampleCoords, in vec3 WorldPosition) {
+	float distance = length(WorldPosition - playerPosition);
+	float bias = calculateShadowBias(distance);
+    return step(SampleCoords.z - bias, texture2D(ShadowMap, SampleCoords.xy).r);
+}
+
+vec3 TransparentShadow(in vec3 SampleCoords, in vec3 WorldPosition){
+    float ShadowVisibility0 = Visibility(shadowtex0, SampleCoords, WorldPosition);
+    float ShadowVisibility1 = Visibility(shadowtex1, SampleCoords, WorldPosition);
+    vec4 ShadowColor0 = texture2D(shadowcolor0, SampleCoords.xy);
+    vec3 TransmittedColor = ShadowColor0.rgb * (1.0f - ShadowColor0.a);
+    return mix(TransmittedColor * ShadowVisibility1, vec3(1.0f), ShadowVisibility0);
+}
+
+const int TotalSamples = 9;
+
+vec3 GetShadow(float depth) {
+    #if ENABLE_SHADOWS == 0
+        return vec3(1.0f);
+    #endif
+    
+    vec3 ClipSpace = vec3(TexCoords, depth) * 2.0f - 1.0f;
+	
+    vec4 ViewW = gbufferProjectionInverse * vec4(ClipSpace, 1.0f);
+    vec3 View = ViewW.xyz / ViewW.w;
+    vec4 World = gbufferModelViewInverse * vec4(View, 1.0f);
+	
+    vec4 ShadowSpace = shadowProjection * shadowModelView * World;
+    ShadowSpace.xyz = DistortPosition(ShadowSpace.xyz);
+    vec3 SampleCoords = ShadowSpace.xyz * 0.5f + 0.5f;
+	
+    float RandomAngle = texture2D(noisetex, TexCoords * 20.0f).r * 100.0f;
+    float cosTheta = cos(RandomAngle);
+	float sinTheta = sin(RandomAngle);
+    mat2 Rotation =  mat2(cosTheta, -sinTheta, sinTheta, cosTheta) / shadowMapResolution;
+	
+    vec3 ShadowAccum = vec3(0.0f);
+    for(int x = -1; x <= 1; x++){
+        for(int y = -1; y <= 1; y++){
+            vec2 Offset = Rotation * vec2(x, y);
+            vec3 CurrentSampleCoordinate = vec3(SampleCoords.xy + Offset, SampleCoords.z);
+            ShadowAccum += TransparentShadow(CurrentSampleCoordinate, World.xyz);
+        }
+    }
+    ShadowAccum /= TotalSamples;
+	
+	float distanceShadowFade = length(View) / shadowDistance;
+	float shadowFade = smoothstep(0.0, 1.0, 1.0 - distanceShadowFade);
+	ShadowAccum = clamp(mix(vec3(1), ShadowAccum, 1 - pow(1 - shadowFade, 10)), 0, 1);
+	
+    return ShadowAccum;
+}
+
+vec3 projectAndDivide(mat4 projectionMatrix, vec3 position){
+	vec4 homPos = projectionMatrix * vec4(position, 1.0);
+	return homPos.xyz / homPos.w;
 }
 
 void main()
 {
-    vec3 color = texture(colortex0, texcoord).rgb;
-	vec3 norm = texture(colortex2, texcoord).rgb;
+	timeCounter = smoothTransition(worldTime);
+
+    vec3 Albedo = texture2D(colortex0, TexCoords).rgb;
+    float rain = texture2D(colortex4, TexCoords).r;
+	vec3 rainCol = vec3(rain) * mix(vec3(0.73, 0.71, 1), vec3(0.549, 0.827, 0.475), timeCounter);
+    float Depth = texture2D(depthtex0, TexCoords).r;
 	
-	float Depthv1 = texture2D(dhDepthTex0, texcoord).r;
-	float Depthv0 = texture2D(depthtex0, texcoord).r;
+    if(Depth == 1.0f) {
+        gl_FragData[0] = vec4(Albedo+rainCol, 1.0f);
+        return;
+    }
 	
-	if(Depthv0 == 1.0f)
-	{		
-		vec2 ndc = texcoord * 2.0 - 1.0;
-		vec4 clip = vec4(ndc, Depthv1 * 2.0 - 1.0, 1.0);
-		vec4 view = dhProjectionInverse * clip;
-		view /= view.w;
-		
-		float distanceFade = clamp(length(view.xyz) / (dhFarPlane / 1.5), 0.0, 1.0);
-		float fade = pow(smoothstep(0.0, 1.0, 1.0 - distanceFade), 0.25);
-		
-		float aoStrength = 1.0f;
-		
-		if (fade > 0.90f) {
-			vec3 p = getPosition(texcoord);
-			vec3 n = getNormal(texcoord);
-			float rad = 1.0f / abs(p.z);
-			
-			float rawAO = spiralAO(texcoord, p, n, rad);
-			aoStrength = 1.0 - rawAO * 5f;
-		}
-		
-		if(length(norm) != 0.0f)
-		{
-			color *= aoStrength;
-		}
-		
-		/*DRAWBUFFERS:0*/
-		gl_FragData[0].rgb = vec3(color);
+	float lightBrightness = texture2D(colortex3, TexCoords).x;
+	vec2 Lightmap = texture2D(colortex3, TexCoords).yz;
+	lightBrightness *= mix(AdjustLightmapSky(Lightmap.y) * 0.35f, AdjustLightmapSky(Lightmap.y), timeCounter);
+	
+	Albedo *= mix(vec3(0.73, 0.71, 1)*0.65f, vec3(1), timeCounter);		//Night Color
+    vec3 Diffuse = Albedo * (mix(vec3(1.0f), GetShadow(Depth) * lightBrightness, mix(mix(0.65f, 0.5f, timeCounter), 0, rainStrength)));	//Shadow
+	Diffuse *= mix(1, 0.5, rainStrength);
+	Diffuse *= mix(1.0, clamp(Lightmap.y + Lightmap.x, 0, 1) + (pow(Lightmap.x, 3)*3f * (1 - timeCounter)), 0.75f);		//Power Light
+	
+	Outline(Diffuse.rgb, depthtex0, TexCoords);
+	
+	float farW = far;
+	float distW = 3;
+	if(isEyeInWater == 1) {
+		farW = 32;
+		distW = 1;
 	}
-	else
-	{
-		/*DRAWBUFFERS:0*/
-		gl_FragData[0].rgb = vec3(color);
-	}
+	vec3 NDCPos = vec3(TexCoords, Depth) * 2.0 - 1.0;
+	vec3 viewPos = projectAndDivide(gbufferProjectionInverse, NDCPos);
+	float distance = length(viewPos) / (farW * mix(mix(1, near * 0.5, blindness), near, darknessFactor));
+	float fogFactor = exp(-mix(distW, 1, blindness) * (1.0 - distance));
+	
+	// FOG
+	Diffuse = mix(Diffuse, mix(vec3(0.549, 0.827, 0.475) * 0.85f, mix(vec3(0.73, 0.71, 1)*0.35f, vec3(0.231, 0.643, 0.639), timeCounter), 1 - isEyeInWater), clamp(fogFactor, 0.0, 1.0));
+	
+	Diffuse += rainCol;
+	
+    /* DRAWBUFFERS:0 */
+    gl_FragData[0] = vec4(vec3(Diffuse), 1.0f);
 }

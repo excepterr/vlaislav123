@@ -272,7 +272,7 @@ void main() {
     float strength = 0.85;
     color = color + strength * (color - blur);
     #endif
-
+    
     // Apply gradient and tone mapping
     float luminance = getLuminance(color);
     vec3 gradientColor = applyGradient(luminance);
