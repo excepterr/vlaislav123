@@ -6,6 +6,8 @@ uniform sampler2D colortex0;
 uniform float viewWidth;
 uniform float viewHeight;
 
+uniform float frameTimeCounter;
+
 in vec2 texcoord;
 
 const float edgeThresholdMin = 0.03125;
@@ -183,8 +185,77 @@ void FXAA311(inout vec3 color)
     }
 }
 
+//vec3 color2 = vec3(0.384, 0.82, 0.914);
+//vec3 color3 = vec3(1, 0.275, 0.58);
+//vec3 color1 = vec3(0.204, 0.247, 0.239); //самый тёмный
+
+vec3 color2 = vec3(0.333, 0.341, 1);
+vec3 color3 = vec3(0.325, 0.345, 1);
+vec3 color1 = vec3(0.133, 0.016, 0.325); //самый тёмный
+
+float pos1 = 0;
+float pos2 = 0.5;
+float pos3 = 1;
+
+float getLuminance(vec3 color) {
+    return dot(color, vec3(0.299, 0.587, 0.114));
+}
+
+vec3 applyGradient(float gray) {
+    if (gray <= pos1) {
+        return color1;
+    }
+    else if (gray <= pos2) {
+        float t = (gray - pos1) / (pos2 - pos1);
+        return mix(color1, color2, t);
+    }
+    else if (gray <= pos3) {
+        float t = (gray - pos2) / (pos3 - pos2);
+        return mix(color2, color3, t);
+    }
+    else {
+        return color3;
+    }
+}
+
+vec3 colorGrade(vec3 c) {
+    // hyperpop градиент
+    vec3 low = vec3(0.8, 0.3, 1.0);   // розово-фиолетовый
+    vec3 mid = vec3(0.2, 0.9, 1.0);   // голубой
+    vec3 high = vec3(1.0, 0.9, 0.6);  // лимонный
+    float l = dot(c, vec3(0.299, 0.587, 0.114));
+    if (l < 0.4) return mix(low, mid, smoothstep(0.0,0.4,l));
+    return mix(mid, high, smoothstep(0.4,1.0,l));
+}
+
+vec3 getOutlineColor(int preset) {
+    if (preset == 0) return vec3(1.0, 1.0, 1.0);      // Белый
+    if (preset == 1) return vec3(0.0, 0.0, 0.0);      // Чёрный
+    if (preset == 2) return vec3(0.0, 0.5, 1.0);      // Синий
+    if (preset == 3) return vec3(1.0, 0.4, 0.7);      // Розовый
+    if (preset == 4) return vec3(0.6, 0.2, 0.8);      // Фиолетовый
+    return vec3(1.0, 1.0, 1.0); // По умолчанию белый
+}
+
 void main() {
     vec3 color = texture(colortex0, texcoord).rgb;
+    
+    // Outline effect
+    #if ENABLE_OUTLINE == 1
+    float outlineRadius = OUTLINE_RADIUS / viewHeight;
+    vec3 outlineColor = getOutlineColor(OUTLINE_COLOR_PRESET);
+    
+    float outlineSample1 = texture2D(colortex0, texcoord + vec2(outlineRadius, 0.0)).a;
+    float outlineSample2 = texture2D(colortex0, texcoord - vec2(outlineRadius, 0.0)).a;
+    float outlineSample3 = texture2D(colortex0, texcoord + vec2(0.0, outlineRadius)).a;
+    float outlineSample4 = texture2D(colortex0, texcoord - vec2(0.0, outlineRadius)).a;
+    
+    float edgeDetect = 1.0 - min(min(outlineSample1, outlineSample2), min(outlineSample3, outlineSample4));
+    edgeDetect *= OUTLINE_STRENGTH;
+    edgeDetect = clamp(edgeDetect, 0.0, 1.0);
+    
+    color = mix(color, outlineColor, edgeDetect);
+    #endif
 
     #if TYPE_AA == 0
     FXAA311(color);
@@ -204,7 +275,13 @@ void main() {
     float strength = 0.85;
     color = color + strength * (color - blur);
     #endif
-    
+	
+	float luminance = getLuminance(color.rgb);
+	vec3 gradientColor = applyGradient(luminance);
+	vec3 finalColor = mix(color.rgb, gradientColor, 0);
+	
+	finalColor = pow(finalColor, vec3(0.9)); // Снижение контраста
+	
 	/*DRAWBUFFERS:0*/
-	gl_FragData[0].rgb = vec3(color);
+	gl_FragData[0].rgb = vec3(finalColor);
 }
