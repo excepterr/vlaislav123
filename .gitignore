@@ -1,15 +1,15 @@
 ```
 # Compiled and build artifacts
 *.pyc
-__pycache__/
+*.class
 *.o
 *.obj
-*.class
 *.exe
 *.dll
 *.so
 *.a
 *.out
+*.tmp
 
 # Dependencies
 node_modules/
@@ -30,6 +30,11 @@ target/
 *.tmp
 *.swp
 *.swo
+
+# Environment
+.env
+.env.local
+*.env.*
 
 # Editors
 .vscode/
