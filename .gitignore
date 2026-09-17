@@ -15,9 +15,13 @@
 node_modules/
 venv/
 .venv/
-__pycache__/
-.mypy_cache/
-.pytest_cache/
+.env
+.env.local
+.env.*
+
+# Build directories
+dist/
+build/
 target/
 .gradle/
 
@@ -35,6 +39,8 @@ target/
 # Editors
 .vscode/
 .idea/
+*.swp
+*.swo
 
 # System files
 .DS_Store
@@ -45,7 +51,13 @@ coverage/
 htmlcov/
 .coverage
 
-# Compressed files
+# Python specific
+*.pyc
+__pycache__/
+.mypy_cache/
+.pytest_cache/
+
+# Compression files
 *.zip
 *.gz
 *.tar
@@ -64,4 +76,8 @@ htmlcov/
 *.Z
 *.lz
 *.lzo
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
 ```
