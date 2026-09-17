@@ -1,6 +1,7 @@
 #version 130
 
 #include "/lib/whatTime.glsl"
+#include "/settings.glsl"
 
 uniform float viewHeight;
 uniform float viewWidth;
@@ -45,24 +46,28 @@ float noise(vec2 p) {
 
 void main()
 {
-	vec3 color;
-	
-	timeCounter = smoothTransition(worldTime);
-	
-	if (starData.a > 0.5) {
-		color = starData.rgb * 0.65;
-	}
-	else {
-		vec4 pos = vec4(gl_FragCoord.xy / vec2(viewWidth, viewHeight) * 2.0 - 1.0, 1.0, 1.0);
-		pos = gbufferProjectionInverse * pos;
-		color = calcSkyColor(normalize(pos.xyz));
-	}
-	
-	if(isEyeInWater == 1) {
-		color = vec3(0.322, 0.855, 0.996);
-	}
-	
-	/* DRAWBUFFERS:03 */
+        #if ENABLE_SKY == 0
+                discard;
+        #endif
+        
+        vec3 color;
+        
+        timeCounter = smoothTransition(worldTime);
+        
+        if (starData.a > 0.5) {
+                color = starData.rgb * 0.65;
+        }
+        else {
+                vec4 pos = vec4(gl_FragCoord.xy / vec2(viewWidth, viewHeight) * 2.0 - 1.0, 1.0, 1.0);
+                pos = gbufferProjectionInverse * pos;
+                color = calcSkyColor(normalize(pos.xyz));
+        }
+        
+        if(isEyeInWater == 1) {
+                color = vec3(0.322, 0.855, 0.996);
+        }
+        
+        /* DRAWBUFFERS:03 */
     gl_FragData[0] = vec4(color.rgb, 1.0);
     gl_FragData[1] = vec4(1.0);
 }

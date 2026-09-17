@@ -124,6 +124,10 @@ vec3 TransparentShadow(in vec3 SampleCoords, in vec3 WorldPosition){
 const int TotalSamples = 9;
 
 vec3 GetShadow(float depth) {
+    #if ENABLE_SHADOWS == 0
+        return vec3(1.0f);
+    #endif
+    
     vec3 ClipSpace = vec3(TexCoords, depth) * 2.0f - 1.0f;
 	
     vec4 ViewW = gbufferProjectionInverse * vec4(ClipSpace, 1.0f);
