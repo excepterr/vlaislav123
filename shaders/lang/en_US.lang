@@ -54,3 +54,23 @@ value.shadowMapResolution.2048=Medium High (2048)
 value.shadowMapResolution.3072=High (3072)
 value.shadowMapResolution.4096=Very High (4096)
 value.shadowMapResolution.8192=Ultra High (8192)
+
+# Outline Settings
+screen.OL=Outline/Обводка
+
+option.ENABLE_OUTLINE=§6Enable Outline
+option.ENABLE_OUTLINE.comment=Enables or disables the outline effect around objects.
+value.ENABLE_OUTLINE.0=Off
+value.ENABLE_OUTLINE.1=On
+
+option.OUTLINE_COLOR_R=§6Outline Color Red
+option.OUTLINE_COLOR_R.comment=Adjusts the red component of the outline color.
+option.OUTLINE_COLOR_G=§6Outline Color Green
+option.OUTLINE_COLOR_G.comment=Adjusts the green component of the outline color.
+option.OUTLINE_COLOR_B=§6Outline Color Blue
+option.OUTLINE_COLOR_B.comment=Adjusts the blue component of the outline color.
+
+option.OUTLINE_STRENGTH=§6Outline Strength
+option.OUTLINE_STRENGTH.comment=Adjusts how strong/dense the outline appears. Higher values make outlines more prominent.
+option.OUTLINE_RADIUS=§6Outline Radius
+option.OUTLINE_RADIUS.comment=Adjusts the size/thickness of the outline. Larger values create thicker outlines.
