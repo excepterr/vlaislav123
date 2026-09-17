@@ -273,12 +273,13 @@ void main() {
     color = color + strength * (color - blur);
     #endif
 
-    float luminance = getLuminance(color.rgb);
+    // Apply gradient and tone mapping
+    float luminance = getLuminance(color);
     vec3 gradientColor = applyGradient(luminance);
-    vec3 finalColor = mix(color.rgb, gradientColor, 0);
+    vec3 finalColor = mix(color, gradientColor, 0.0);
 
-    finalColor = pow(finalColor, vec3(0.9)); // Снижение контраста
+    finalColor = pow(finalColor, vec3(0.9)); // Gamma correction
 
     /*DRAWBUFFERS:0*/
-    gl_FragData[0].rgb = vec3(finalColor);
+    gl_FragData[0] = vec4(finalColor, 1.0);
 }

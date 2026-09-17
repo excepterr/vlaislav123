@@ -3,12 +3,14 @@
 *.pyc
 *.class
 *.o
-*.obj
-*.out
 *.exe
 *.dll
 *.so
 *.a
+*.obj
+*.out
+*.log
+*.tmp
 
 # Dependencies
 node_modules/
@@ -20,29 +22,27 @@ __pycache__/
 target/
 .gradle/
 
-# Build directories
-dist/
-build/
-coverage/
-htmlcov/
-*.egg-info/
-
-# Editors and IDEs
+# Editors
 .vscode/
 .idea/
 *.swp
 *.swo
-*.tmp
 
-# System files
+# System
 .DS_Store
 Thumbs.db
 .env
 .env.local
 *.env.*
 
-# Logs
-*.log
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# Build directories
+dist/
+build/
 
 # Compressed files
 *.zip
@@ -63,4 +63,8 @@ Thumbs.db
 *.Z
 *.lz
 *.lzo
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
 ```
